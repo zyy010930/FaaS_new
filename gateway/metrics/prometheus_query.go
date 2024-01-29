@@ -69,6 +69,10 @@ type VectorQueryResponse struct {
 			Metric struct {
 				Code         string `json:"code"`
 				FunctionName string `json:"function_name"`
+
+				// 添加如下
+				Container string `json:"container"`
+				Namespace string `json:"namespace"`
 			}
 			Value []interface{} `json:"value"`
 		}

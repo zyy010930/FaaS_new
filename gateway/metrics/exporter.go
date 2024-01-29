@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strconv"
 	"time"
 
 	"log"
@@ -27,15 +28,20 @@ type Exporter struct {
 	services          []types.FunctionStatus
 	credentials       *auth.BasicAuthCredentials
 	FunctionNamespace string
+
+	// 加这个，用来查询prometheus
+	prometheusQuery PrometheusQueryFetcher
 }
 
 // NewExporter creates a new exporter for the OpenFaaS gateway metrics
-func NewExporter(options MetricOptions, credentials *auth.BasicAuthCredentials, namespace string) *Exporter {
+func NewExporter(options MetricOptions, credentials *auth.BasicAuthCredentials, namespace string, prometheusQuery PrometheusQueryFetcher) *Exporter {
 	return &Exporter{
 		metricOptions:     options,
 		services:          []types.FunctionStatus{},
 		credentials:       credentials,
 		FunctionNamespace: namespace,
+		// 加这个
+		prometheusQuery: prometheusQuery,
 	}
 }
 
@@ -46,6 +52,9 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.metricOptions.GatewayFunctionsHistogram.Describe(ch)
 	e.metricOptions.ServiceReplicasGauge.Describe(ch)
 	e.metricOptions.GatewayFunctionInvocationStarted.Describe(ch)
+
+	e.metricOptions.PodCpuUsageSecondsTotal.Describe(ch)
+	e.metricOptions.PodMemoryWorkingSetBytes.Describe(ch)
 }
 
 // Collect collects data to be consumed by prometheus
@@ -69,7 +78,17 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		e.metricOptions.ServiceReplicasGauge.
 			WithLabelValues(serviceName).
 			Set(float64(service.Replicas))
+
+		// 加这里，不然销毁的实例没数据
+		e.metricOptions.PodCpuUsageSecondsTotal.WithLabelValues(serviceName).Set(0)
+		e.metricOptions.PodMemoryWorkingSetBytes.WithLabelValues(serviceName).Set(0)
 	}
+	// 加这个来计算
+	e.calc()
+
+	// 添加如下
+	e.metricOptions.PodCpuUsageSecondsTotal.Collect(ch)
+	e.metricOptions.PodMemoryWorkingSetBytes.Collect(ch)
 
 	e.metricOptions.ServiceReplicasGauge.Collect(ch)
 }
@@ -202,4 +221,36 @@ func (e *Exporter) getNamespaces(endpointURL url.URL) ([]string, error) {
 		return namespaces, fmt.Errorf("error unmarshalling response: %s, error: %s", string(bytesOut), err)
 	}
 	return namespaces, nil
+}
+
+// ! 这个是新加的函数，直接放最底下。即将查出来的指标转成自己定义的
+func (e *Exporter) calc() {
+	q1 := `sum by(container, namespace) (container_cpu_usage_seconds_total{image!="",namespace="openfaas-fn", container!="POD"})`
+	q2 := `sum by(container, namespace) (container_memory_working_set_bytes{image!="",namespace="openfaas-fn", container!="POD"})`
+
+	q1Results, err := e.prometheusQuery.Fetch(url.QueryEscape(q1))
+	if err != nil {
+		log.Printf("Error querying q1: %s\n", err.Error())
+		return
+	}
+
+	// cpu
+	for _, v := range q1Results.Data.Result {
+		metricValue := v.Value[1]
+		f, _ := strconv.ParseFloat(metricValue.(string), 64)
+		e.metricOptions.PodCpuUsageSecondsTotal.WithLabelValues(fmt.Sprintf("%s.%s", v.Metric.Container, v.Metric.Namespace)).Set(f)
+	}
+
+	q2Results, err := e.prometheusQuery.Fetch(url.QueryEscape(q2))
+	if err != nil {
+		log.Printf("Error querying q2: %s\n", err.Error())
+		return
+	}
+
+	// memory
+	for _, v := range q2Results.Data.Result {
+		metricValue := v.Value[1]
+		f, _ := strconv.ParseFloat(metricValue.(string), 64)
+		e.metricOptions.PodMemoryWorkingSetBytes.WithLabelValues(fmt.Sprintf("%s.%s", v.Metric.Container, v.Metric.Namespace)).Set(f)
+	}
 }

@@ -66,7 +66,13 @@ func main() {
 	servicePollInterval := time.Second * 5
 
 	metricsOptions := metrics.BuildMetricsOptions()
-	exporter := metrics.NewExporter(metricsOptions, credentials, config.Namespace)
+
+	prometheusQuery := metrics.NewPrometheusQuery(config.PrometheusHost, config.PrometheusPort, &http.Client{})
+
+	// 在原来的基础上加个prometheusQuery参数
+	exporter := metrics.NewExporter(metricsOptions, credentials, config.Namespace, prometheusQuery)
+
+	//exporter := metrics.NewExporter(metricsOptions, credentials, config.Namespace)
 	exporter.StartServiceWatcher(*config.FunctionsProviderURL, metricsOptions, "func", servicePollInterval)
 	metrics.RegisterExporter(exporter)
 
@@ -177,7 +183,8 @@ func main() {
 		)
 	}
 
-	prometheusQuery := metrics.NewPrometheusQuery(config.PrometheusHost, config.PrometheusPort, &http.Client{})
+	//prometheusQuery := metrics.NewPrometheusQuery(config.PrometheusHost, config.PrometheusPort, &http.Client{})
+
 	faasHandlers.ListFunctions = metrics.AddMetricsHandler(faasHandlers.ListFunctions, prometheusQuery)
 	faasHandlers.ScaleFunction = scaling.MakeHorizontalScalingHandler(handlers.MakeForwardingProxyHandler(reverseProxy, forwardingNotifiers, urlResolver, nilURLTransformer, serviceAuthInjector))
 

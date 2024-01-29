@@ -18,6 +18,10 @@ type MetricOptions struct {
 	GatewayFunctionInvocationStarted *prometheus.CounterVec
 
 	ServiceReplicasGauge *prometheus.GaugeVec
+
+	// 添加cpu和memory的指标
+	PodCpuUsageSecondsTotal  *prometheus.GaugeVec
+	PodMemoryWorkingSetBytes *prometheus.GaugeVec
 }
 
 // ServiceMetricOptions provides RED metrics
@@ -77,11 +81,34 @@ func BuildMetricsOptions() MetricOptions {
 		[]string{"function_name"},
 	)
 
+	// 添加如下
+	podCpuUsageSecondsTotal := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Subsystem: "pod",
+			Name:      "cpu_usage_seconds_total",
+			Help:      "CPU seconds consumed by all the replicas of a given function.",
+		},
+		[]string{"function_name"},
+	)
+
+	podMemoryWorkingSetBytes := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Subsystem: "pod",
+			Name:      "memory_working_set_bytes",
+			Help:      "Bytes of RAM consumed by all the replicas of a given function",
+		},
+		[]string{"function_name"},
+	)
+
 	metricsOptions := MetricOptions{
 		GatewayFunctionsHistogram:        gatewayFunctionsHistogram,
 		GatewayFunctionInvocation:        gatewayFunctionInvocation,
 		ServiceReplicasGauge:             serviceReplicas,
 		GatewayFunctionInvocationStarted: gatewayFunctionInvocationStarted,
+
+		// 添加如下
+		PodCpuUsageSecondsTotal:  podCpuUsageSecondsTotal,
+		PodMemoryWorkingSetBytes: podMemoryWorkingSetBytes,
 	}
 
 	return metricsOptions
