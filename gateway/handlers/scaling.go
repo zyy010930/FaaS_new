@@ -52,3 +52,40 @@ func MakeScalingHandler(next http.HandlerFunc, scaler scaling.FunctionScaler, co
 			functionName, namespace, res.Duration.Seconds())
 	}
 }
+
+func MakeScaleToZeroHandler(scaler scaling.FunctionScaler, config scaling.ScalingConfig, defaultNamespace string) http.HandlerFunc {
+	log.Printf("scale-to-zero\n")
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		functionName, namespace := middleware.GetNamespace(defaultNamespace, middleware.GetServiceNameZero(r.URL.String()))
+
+		res := scaler.ScaleToZero(functionName, namespace)
+
+		if !res.Found {
+			errStr := fmt.Sprintf("error finding function %s.%s: %s", functionName, namespace, res.Error.Error())
+			log.Printf("Scaling: %s\n", errStr)
+
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte(errStr))
+			return
+		}
+
+		if res.Error != nil {
+			errStr := fmt.Sprintf("error finding function %s.%s: %s", functionName, namespace, res.Error.Error())
+			log.Printf("Scaling: %s\n", errStr)
+
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(errStr))
+			return
+		}
+
+		if res.Available {
+			//next.ServeHTTP(w, r)
+			w.WriteHeader(http.StatusAccepted)
+			return
+		}
+
+		log.Printf("[Scale] function=%s.%s N=>0 timed-out after %.4fs\n",
+			functionName, namespace, res.Duration.Seconds())
+	}
+}

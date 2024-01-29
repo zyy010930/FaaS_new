@@ -11,6 +11,7 @@ import (
 
 // functionMatcher parses out the service name (group 1) and rest of path (group 2).
 var functionMatcher = regexp.MustCompile("^/?(?:async-)?function/([^/?]+)([^?]*)")
+var zeroMatcher = regexp.MustCompile("^/?(?:async-)?zero/([^/?]+)([^?]*)")
 
 // Indices and meta-data for functionMatcher regex parts
 const (
@@ -147,6 +148,24 @@ func GetServiceName(urlValue string) string {
 		// The item at index `0` is the same as `urlValue`, at `1`
 		// will be the service name we need, and at `2` the rest of the path.
 		matcher := functionMatcher.Copy()
+		matches := matcher.FindStringSubmatch(urlValue)
+		if len(matches) == hasPathCount {
+			serviceName = matches[nameIndex]
+		}
+	}
+	return strings.Trim(serviceName, "/")
+}
+
+func GetServiceNameZero(urlValue string) string {
+	var serviceName string
+	forward := "/zero/"
+	if strings.HasPrefix(urlValue, forward) {
+		// With a path like `/function/xyz/rest/of/path?q=a`, the service
+		// name we wish to locate is just the `xyz` portion.  With a positive
+		// match on the regex below, it will return a three-element slice.
+		// The item at index `0` is the same as `urlValue`, at `1`
+		// will be the service name we need, and at `2` the rest of the path.
+		matcher := zeroMatcher.Copy()
 		matches := matcher.FindStringSubmatch(urlValue)
 		if len(matches) == hasPathCount {
 			serviceName = matches[nameIndex]

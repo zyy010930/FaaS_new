@@ -120,6 +120,11 @@ func main() {
 		handlers.MakeForwardingProxyHandler(reverseProxy, functionNotifiers, functionURLResolver, functionURLTransformer, nil),
 	)
 
+	//test
+	faasHandlers.ZeroFunction = handlers.MakeCallIDMiddleware(
+		handlers.MakeForwardingProxyHandler(reverseProxy, functionNotifiers, functionURLResolver, functionURLTransformer, nil),
+	)
+
 	faasHandlers.ListFunctions = handlers.MakeForwardingProxyHandler(reverseProxy, forwardingNotifiers, urlResolver, nilURLTransformer, serviceAuthInjector)
 	faasHandlers.DeployFunction = handlers.MakeForwardingProxyHandler(reverseProxy, forwardingNotifiers, urlResolver, nilURLTransformer, serviceAuthInjector)
 	faasHandlers.DeleteFunction = handlers.MakeForwardingProxyHandler(reverseProxy, forwardingNotifiers, urlResolver, nilURLTransformer, serviceAuthInjector)
@@ -140,12 +145,17 @@ func main() {
 	faasHandlers.LogProxyHandler = handlers.NewLogHandlerFunc(*config.LogsProviderURL, config.WriteTimeout)
 
 	functionProxy := faasHandlers.Proxy
+	//test
+	scaleToZeroProxy := faasHandlers.ZeroFunction
 
-	if config.ScaleFromZero {
-		scalingFunctionCache := scaling.NewFunctionCache(scalingConfig.CacheExpiry)
-		scaler := scaling.NewFunctionScaler(scalingConfig, scalingFunctionCache)
-		functionProxy = handlers.MakeScalingHandler(functionProxy, scaler, scalingConfig, config.Namespace)
-	}
+	//if config.ScaleFromZero {
+	scalingFunctionCache := scaling.NewFunctionCache(scalingConfig.CacheExpiry)
+	scaler := scaling.NewFunctionScaler(scalingConfig, scalingFunctionCache)
+	functionProxy = handlers.MakeScalingHandler(functionProxy, scaler, scalingConfig, config.Namespace)
+	//test
+	log.Println("----------scaleToZeroProxy---------")
+	scaleToZeroProxy = handlers.MakeScaleToZeroHandler(scaler, scalingConfig, config.Namespace)
+	//}
 
 	if config.UseNATS() {
 		log.Println("Async enabled: Using NATS Streaming")
@@ -204,6 +214,10 @@ func main() {
 	r.HandleFunc("/function/{name:["+NameExpression+"]+}", functionProxy)
 	r.HandleFunc("/function/{name:["+NameExpression+"]+}/", functionProxy)
 	r.HandleFunc("/function/{name:["+NameExpression+"]+}/{params:.*}", functionProxy)
+	//test
+	r.HandleFunc("/zero/{name:["+NameExpression+"]+}", scaleToZeroProxy)
+	r.HandleFunc("/zero/{name:["+NameExpression+"]+}/", scaleToZeroProxy)
+	r.HandleFunc("/zero/{name:["+NameExpression+"]+}/{params:.*}", scaleToZeroProxy)
 
 	r.HandleFunc("/system/info", faasHandlers.InfoHandler).Methods(http.MethodGet)
 	r.HandleFunc("/system/alert", faasHandlers.Alert).Methods(http.MethodPost)
