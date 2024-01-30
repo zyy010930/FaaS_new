@@ -51,6 +51,8 @@ func AddMetricsHandler(handler http.HandlerFunc, prometheusQuery PrometheusQuery
 		// Ensure values are empty first.
 		for i := range functions {
 			functions[i].InvocationCount = 0
+			functions[i].Usage.CPU = 0
+			functions[i].Usage.TotalMemoryBytes = 0
 		}
 
 		if len(functions) > 0 {
