@@ -131,10 +131,10 @@ func mixCPU(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) {
 	if functions == nil {
 		return
 	}
-
+	log.Printf("metrices len: %d", len(metrics.Data.Result))
 	for i, function := range *functions {
 		for _, v := range metrics.Data.Result {
-
+			log.Printf("Container: %s Namespace: %s", v.Metric.Container, v.Metric.Namespace)
 			if v.Metric.Container == fmt.Sprintf("%s", function.Name) && v.Metric.Namespace == fmt.Sprintf("%s", function.Namespace) {
 				metricValue := v.Value[1]
 				switch value := metricValue.(type) {
@@ -144,6 +144,7 @@ func mixCPU(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) {
 						log.Printf("add_metrics: unable to convert value %q for metric: %s", value, err)
 						continue
 					}
+					log.Printf("add_metrics: CPU %f", f)
 					(*((*functions)[i].Usage)).CPU += f
 				}
 			}
@@ -157,9 +158,10 @@ func mixMemory(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) 
 		return
 	}
 
+	log.Printf("metrices len: %d", len(metrics.Data.Result))
 	for i, function := range *functions {
 		for _, v := range metrics.Data.Result {
-
+			log.Printf("Container: %s Namespace: %s", v.Metric.Container, v.Metric.Namespace)
 			if v.Metric.Container == fmt.Sprintf("%s", function.Name) && v.Metric.Namespace == fmt.Sprintf("%s", function.Namespace) {
 				metricValue := v.Value[1]
 				switch value := metricValue.(type) {
@@ -169,6 +171,7 @@ func mixMemory(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) 
 						log.Printf("add_metrics: unable to convert value %q for metric: %s", value, err)
 						continue
 					}
+					log.Printf("add_metrics: Memory %f", f)
 					(*((*functions)[i].Usage)).TotalMemoryBytes += f
 				}
 			}
