@@ -134,7 +134,7 @@ func mixCPU(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) {
 	log.Printf("metrices len: %d", len(metrics.Data.Result))
 	for i, function := range *functions {
 		for _, v := range metrics.Data.Result {
-			log.Printf("Container: %s Namespace: %s", v.Metric.Container, v.Metric.Namespace)
+			log.Printf("Container: %s Namespace: %s funcName: %s", v.Metric.Container, v.Metric.Namespace, v.Metric.FunctionName)
 			if v.Metric.Container == fmt.Sprintf("%s", function.Name) && v.Metric.Namespace == fmt.Sprintf("%s", function.Namespace) {
 				metricValue := v.Value[1]
 				switch value := metricValue.(type) {
@@ -161,7 +161,7 @@ func mixMemory(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) 
 	log.Printf("metrices len: %d", len(metrics.Data.Result))
 	for i, function := range *functions {
 		for _, v := range metrics.Data.Result {
-			log.Printf("Container: %s Namespace: %s", v.Metric.Container, v.Metric.Namespace)
+			log.Printf("Container: %s Namespace: %s funcName: %s", v.Metric.Container, v.Metric.Namespace, v.Metric.FunctionName)
 			if v.Metric.Container == fmt.Sprintf("%s", function.Name) && v.Metric.Namespace == fmt.Sprintf("%s", function.Namespace) {
 				metricValue := v.Value[1]
 				switch value := metricValue.(type) {
