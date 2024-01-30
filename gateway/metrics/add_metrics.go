@@ -69,8 +69,9 @@ func AddMetricsHandler(handler http.HandlerFunc, prometheusQuery PrometheusQuery
 			mixIn(&functions, results)
 
 			//CPU和memory
-			ns1 := functions[0].Namespace
-			q1 := fmt.Sprintf(`sum(pod_cpu_usage_seconds_total{function_name=~".*.%s"}) by (function_name)`, ns1)
+			//ns1 := functions[0].Namespace
+			//q1 := fmt.Sprintf(`sum(pod_cpu_usage_seconds_total{function_name=~".*.%s"}) by (function_name)`, ns1)
+			q1 := fmt.Sprintf(`sum by(container, namespace) (container_memory_working_set_bytes{image!="",namespace="openfaas-fn", container!="POD"})`)
 			results1, err1 := prometheusQuery.Fetch(url.QueryEscape(q1))
 			if err1 != nil {
 				// log the error but continue, the mixIn will correctly handle the empty results.
@@ -78,8 +79,9 @@ func AddMetricsHandler(handler http.HandlerFunc, prometheusQuery PrometheusQuery
 			}
 			mixCPU(&functions, results1)
 
-			ns2 := functions[0].Namespace
-			q2 := fmt.Sprintf(`sum(pod_memory_working_set_bytes{function_name=~".*.%s"}) by (function_name)`, ns2)
+			//ns2 := functions[0].Namespace
+			//q2 := fmt.Sprintf(`sum(pod_memory_working_set_bytes{function_name=~".*.%s"}) by (function_name)`, ns2)
+			q2 := fmt.Sprintf(`sum by(container, namespace) (container_memory_working_set_bytes{image!="",namespace="openfaas-fn", container!="POD"})`)
 			results2, err2 := prometheusQuery.Fetch(url.QueryEscape(q2))
 			if err2 != nil {
 				// log the error but continue, the mixIn will correctly handle the empty results.
@@ -134,8 +136,7 @@ func mixCPU(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) {
 	log.Printf("metrices len: %d", len(metrics.Data.Result))
 	for i, function := range *functions {
 		for _, v := range metrics.Data.Result {
-			log.Printf("Container: %s Namespace: %s funcName: %s", v.Metric.Container, v.Metric.Namespace, v.Metric.FunctionName)
-			if v.Metric.FunctionName == fmt.Sprintf("%s.%s", function.Name, function.Namespace) {
+			if v.Metric.Container == fmt.Sprintf("%s", function.Name) && v.Metric.Namespace == fmt.Sprintf("%s", function.Namespace) {
 				metricValue := v.Value[1]
 				switch value := metricValue.(type) {
 				case string:
@@ -161,8 +162,7 @@ func mixMemory(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) 
 	log.Printf("metrices len: %d", len(metrics.Data.Result))
 	for i, function := range *functions {
 		for _, v := range metrics.Data.Result {
-			log.Printf("Container: %s Namespace: %s funcName: %s", v.Metric.Container, v.Metric.Namespace, v.Metric.FunctionName)
-			if v.Metric.FunctionName == fmt.Sprintf("%s.%s", function.Name, function.Namespace) {
+			if v.Metric.Container == fmt.Sprintf("%s", function.Name) && v.Metric.Namespace == fmt.Sprintf("%s", function.Namespace) {
 				metricValue := v.Value[1]
 				switch value := metricValue.(type) {
 				case string:
