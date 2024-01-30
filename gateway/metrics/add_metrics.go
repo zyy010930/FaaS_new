@@ -135,7 +135,7 @@ func mixCPU(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) {
 	for i, function := range *functions {
 		for _, v := range metrics.Data.Result {
 			log.Printf("Container: %s Namespace: %s funcName: %s", v.Metric.Container, v.Metric.Namespace, v.Metric.FunctionName)
-			if v.Metric.Container == fmt.Sprintf("%s", function.Name) && v.Metric.Namespace == fmt.Sprintf("%s", function.Namespace) {
+			if v.Metric.FunctionName == fmt.Sprintf("%s.%s", function.Name, function.Namespace) {
 				metricValue := v.Value[1]
 				switch value := metricValue.(type) {
 				case string:
@@ -162,7 +162,7 @@ func mixMemory(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) 
 	for i, function := range *functions {
 		for _, v := range metrics.Data.Result {
 			log.Printf("Container: %s Namespace: %s funcName: %s", v.Metric.Container, v.Metric.Namespace, v.Metric.FunctionName)
-			if v.Metric.Container == fmt.Sprintf("%s", function.Name) && v.Metric.Namespace == fmt.Sprintf("%s", function.Namespace) {
+			if v.Metric.FunctionName == fmt.Sprintf("%s.%s", function.Name, function.Namespace) {
 				metricValue := v.Value[1]
 				switch value := metricValue.(type) {
 				case string:
