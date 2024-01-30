@@ -65,6 +65,25 @@ func AddMetricsHandler(handler http.HandlerFunc, prometheusQuery PrometheusQuery
 				log.Printf("Error querying Prometheus: %s\n", err.Error())
 			}
 			mixIn(&functions, results)
+
+			//CPU和memory
+			ns1 := functions[0].Namespace
+			q1 := fmt.Sprintf(`sum(pod_cpu_usage_seconds_total{function_name=~".*.%s"}) by (function_name)`, ns1)
+			results1, err1 := prometheusQuery.Fetch(url.QueryEscape(q1))
+			if err1 != nil {
+				// log the error but continue, the mixIn will correctly handle the empty results.
+				log.Printf("Error querying Prometheus: %s\n", err.Error())
+			}
+			mixCPU(&functions, results1)
+
+			ns2 := functions[0].Namespace
+			q2 := fmt.Sprintf(`sum(pod_memory_working_set_bytes{function_name=~".*.%s"}) by (function_name)`, ns2)
+			results2, err2 := prometheusQuery.Fetch(url.QueryEscape(q2))
+			if err2 != nil {
+				// log the error but continue, the mixIn will correctly handle the empty results.
+				log.Printf("Error querying Prometheus: %s\n", err.Error())
+			}
+			mixMemory(&functions, results2)
 		}
 
 		bytesOut, err := json.Marshal(functions)
@@ -99,6 +118,56 @@ func mixIn(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) {
 						continue
 					}
 					(*functions)[i].InvocationCount += f
+				}
+			}
+		}
+	}
+}
+
+func mixCPU(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) {
+
+	if functions == nil {
+		return
+	}
+
+	for i, function := range *functions {
+		for _, v := range metrics.Data.Result {
+
+			if v.Metric.Container == fmt.Sprintf("%s", function.Name) && v.Metric.Namespace == fmt.Sprintf("%s", function.Namespace) {
+				metricValue := v.Value[1]
+				switch value := metricValue.(type) {
+				case string:
+					f, err := strconv.ParseFloat(value, 64)
+					if err != nil {
+						log.Printf("add_metrics: unable to convert value %q for metric: %s", value, err)
+						continue
+					}
+					(*functions)[i].Usage.CPU += f
+				}
+			}
+		}
+	}
+}
+
+func mixMemory(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) {
+
+	if functions == nil {
+		return
+	}
+
+	for i, function := range *functions {
+		for _, v := range metrics.Data.Result {
+
+			if v.Metric.Container == fmt.Sprintf("%s", function.Name) && v.Metric.Namespace == fmt.Sprintf("%s", function.Namespace) {
+				metricValue := v.Value[1]
+				switch value := metricValue.(type) {
+				case string:
+					f, err := strconv.ParseFloat(value, 64)
+					if err != nil {
+						log.Printf("add_metrics: unable to convert value %q for metric: %s", value, err)
+						continue
+					}
+					(*functions)[i].Usage.TotalMemoryBytes += f
 				}
 			}
 		}
