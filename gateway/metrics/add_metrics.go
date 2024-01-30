@@ -71,7 +71,7 @@ func AddMetricsHandler(handler http.HandlerFunc, prometheusQuery PrometheusQuery
 			//CPU和memory
 			//ns1 := functions[0].Namespace
 			//q1 := fmt.Sprintf(`sum(pod_cpu_usage_seconds_total{function_name=~".*.%s"}) by (function_name)`, ns1)
-			q1 := fmt.Sprintf(`sum by(container, namespace) (container_memory_working_set_bytes{image!="",namespace="openfaas-fn", container!="POD"})`)
+			q1 := fmt.Sprintf(`sum by(container, namespace) (container_cpu_usage_seconds_total{image!="",namespace="openfaas-fn", container!="POD"})`)
 			results1, err1 := prometheusQuery.Fetch(url.QueryEscape(q1))
 			if err1 != nil {
 				// log the error but continue, the mixIn will correctly handle the empty results.
