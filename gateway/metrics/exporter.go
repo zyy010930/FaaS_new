@@ -238,6 +238,7 @@ func (e *Exporter) calc() {
 	for _, v := range q1Results.Data.Result {
 		metricValue := v.Value[1]
 		f, _ := strconv.ParseFloat(metricValue.(string), 64)
+		log.Printf("calc cpu f: %f", f)
 		e.metricOptions.PodCpuUsageSecondsTotal.WithLabelValues(fmt.Sprintf("%s.%s", v.Metric.Container, v.Metric.Namespace)).Set(f)
 	}
 
@@ -251,6 +252,7 @@ func (e *Exporter) calc() {
 	for _, v := range q2Results.Data.Result {
 		metricValue := v.Value[1]
 		f, _ := strconv.ParseFloat(metricValue.(string), 64)
+		log.Printf("calc memory f: %f", f)
 		e.metricOptions.PodMemoryWorkingSetBytes.WithLabelValues(fmt.Sprintf("%s.%s", v.Metric.Container, v.Metric.Namespace)).Set(f)
 	}
 }
