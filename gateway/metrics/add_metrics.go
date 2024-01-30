@@ -144,7 +144,7 @@ func mixCPU(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) {
 						log.Printf("add_metrics: unable to convert value %q for metric: %s", value, err)
 						continue
 					}
-					(*functions)[i].Usage.CPU += f
+					(*((*functions)[i].Usage)).CPU += f
 				}
 			}
 		}
@@ -169,7 +169,7 @@ func mixMemory(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) 
 						log.Printf("add_metrics: unable to convert value %q for metric: %s", value, err)
 						continue
 					}
-					(*functions)[i].Usage.TotalMemoryBytes += f
+					(*((*functions)[i].Usage)).TotalMemoryBytes += f
 				}
 			}
 		}
