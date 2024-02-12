@@ -3,6 +3,7 @@ package metrics
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/openfaas/faas-provider/types"
 	"io"
 	"log"
 	"net/http"
@@ -36,15 +37,16 @@ func AddMetricsHandler(handler http.HandlerFunc, prometheusQuery PrometheusQuery
 			return
 		}
 
-		var functions []FunctionStatus
+		var function []types.FunctionStatus
 
-		err := json.Unmarshal(upstreamBody, &functions)
+		err := json.Unmarshal(upstreamBody, &function)
 		if err != nil {
 			log.Printf("Metrics upstream error: %s, value: %s", err, string(upstreamBody))
 
 			http.Error(w, "Unable to parse list of functions from provider", http.StatusInternalServerError)
 			return
 		}
+		var functions []FunctionStatus
 
 		// Ensure values are empty first.
 		for i := range functions {
@@ -52,6 +54,20 @@ func AddMetricsHandler(handler http.HandlerFunc, prometheusQuery PrometheusQuery
 			functions[i].InvocationAvgTime = 0
 			var usage = FunctionUsage{CPU: 0, TotalMemoryBytes: 0}
 			functions[i].Usage = &usage
+			functions[i].Name = function[i].Name
+			functions[i].Namespace = function[i].Namespace
+			functions[i].Image = function[i].Image
+			functions[i].Limits.CPU = function[i].Limits.CPU
+			functions[i].Limits.Memory = function[i].Limits.Memory
+			functions[i].EnvProcess = function[i].EnvProcess
+			functions[i].AvailableReplicas = function[i].AvailableReplicas
+			functions[i].Replicas = function[i].Replicas
+			functions[i].Requests.CPU = function[i].Requests.CPU
+			functions[i].Requests.Memory = function[i].Requests.Memory
+			functions[i].Annotations = function[i].Annotations
+			functions[i].Constraints = function[i].Constraints
+			functions[i].ReadOnlyRootFilesystem = function[i].ReadOnlyRootFilesystem
+			functions[i].CreatedAt = function[i].CreatedAt
 		}
 
 		if len(functions) > 0 {
