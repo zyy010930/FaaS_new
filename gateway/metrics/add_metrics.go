@@ -59,11 +59,15 @@ func AddMetricsHandler(handler http.HandlerFunc, prometheusQuery PrometheusQuery
 			fun.Name = function[i].Name
 			fun.Namespace = function[i].Namespace
 			fun.Image = function[i].Image
+			var limit = FunctionResources{CPU: "", Memory: ""}
+			fun.Limits = &limit
 			fun.Limits.CPU = function[i].Limits.CPU
 			fun.Limits.Memory = function[i].Limits.Memory
 			fun.EnvProcess = function[i].EnvProcess
 			fun.AvailableReplicas = function[i].AvailableReplicas
 			fun.Replicas = function[i].Replicas
+			var request = FunctionResources{CPU: "", Memory: ""}
+			fun.Requests = &request
 			fun.Requests.CPU = function[i].Requests.CPU
 			fun.Requests.Memory = function[i].Requests.Memory
 			fun.Annotations = function[i].Annotations
