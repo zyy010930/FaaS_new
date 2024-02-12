@@ -49,7 +49,7 @@ func AddMetricsHandler(handler http.HandlerFunc, prometheusQuery PrometheusQuery
 		var functions []FunctionStatus
 
 		// Ensure values are empty first.
-		for i := range functions {
+		for i := range function {
 			functions[i].InvocationCount = 0
 			functions[i].InvocationAvgTime = 0
 			var usage = FunctionUsage{CPU: 0, TotalMemoryBytes: 0}
@@ -222,7 +222,7 @@ func mixTime(functions *[]FunctionStatus, metrics *VectorQueryResponse) {
 						log.Printf("add_metrics: unable to convert value %q for metric: %s", value, err)
 						continue
 					}
-					log.Printf("add_metrics: Memory %f", f)
+					log.Printf("add_metrics: avgTime %f", f)
 					(*functions)[i].InvocationAvgTime += f
 					num += 1.0
 				}
