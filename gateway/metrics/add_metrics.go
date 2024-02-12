@@ -46,28 +46,31 @@ func AddMetricsHandler(handler http.HandlerFunc, prometheusQuery PrometheusQuery
 			http.Error(w, "Unable to parse list of functions from provider", http.StatusInternalServerError)
 			return
 		}
+
 		var functions []FunctionStatus
 
 		// Ensure values are empty first.
 		for i := range function {
-			functions[i].InvocationCount = 0
-			functions[i].InvocationAvgTime = 0
+			var fun FunctionStatus
+			fun.InvocationCount = 0
+			fun.InvocationAvgTime = 0
 			var usage = FunctionUsage{CPU: 0, TotalMemoryBytes: 0}
-			functions[i].Usage = &usage
-			functions[i].Name = function[i].Name
-			functions[i].Namespace = function[i].Namespace
-			functions[i].Image = function[i].Image
-			functions[i].Limits.CPU = function[i].Limits.CPU
-			functions[i].Limits.Memory = function[i].Limits.Memory
-			functions[i].EnvProcess = function[i].EnvProcess
-			functions[i].AvailableReplicas = function[i].AvailableReplicas
-			functions[i].Replicas = function[i].Replicas
-			functions[i].Requests.CPU = function[i].Requests.CPU
-			functions[i].Requests.Memory = function[i].Requests.Memory
-			functions[i].Annotations = function[i].Annotations
-			functions[i].Constraints = function[i].Constraints
-			functions[i].ReadOnlyRootFilesystem = function[i].ReadOnlyRootFilesystem
-			functions[i].CreatedAt = function[i].CreatedAt
+			fun.Usage = &usage
+			fun.Name = function[i].Name
+			fun.Namespace = function[i].Namespace
+			fun.Image = function[i].Image
+			fun.Limits.CPU = function[i].Limits.CPU
+			fun.Limits.Memory = function[i].Limits.Memory
+			fun.EnvProcess = function[i].EnvProcess
+			fun.AvailableReplicas = function[i].AvailableReplicas
+			fun.Replicas = function[i].Replicas
+			fun.Requests.CPU = function[i].Requests.CPU
+			fun.Requests.Memory = function[i].Requests.Memory
+			fun.Annotations = function[i].Annotations
+			fun.Constraints = function[i].Constraints
+			fun.ReadOnlyRootFilesystem = function[i].ReadOnlyRootFilesystem
+			fun.CreatedAt = function[i].CreatedAt
+			functions = append(functions, fun)
 		}
 
 		if len(functions) > 0 {
