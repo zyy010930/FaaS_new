@@ -53,6 +53,7 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.metricOptions.ServiceReplicasGauge.Describe(ch)
 	e.metricOptions.GatewayFunctionInvocationStarted.Describe(ch)
 
+	e.metricOptions.GatewayFunctionRequestHistogram.Describe(ch)
 	e.metricOptions.PodCpuUsageSecondsTotal.Describe(ch)
 	e.metricOptions.PodMemoryWorkingSetBytes.Describe(ch)
 }
@@ -87,6 +88,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	e.calc()
 
 	// 添加如下
+	e.metricOptions.GatewayFunctionRequestHistogram.Collect(ch)
 	e.metricOptions.PodCpuUsageSecondsTotal.Collect(ch)
 	e.metricOptions.PodMemoryWorkingSetBytes.Collect(ch)
 

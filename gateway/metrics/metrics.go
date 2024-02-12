@@ -19,6 +19,8 @@ type MetricOptions struct {
 
 	ServiceReplicasGauge *prometheus.GaugeVec
 
+	GatewayFunctionRequestHistogram *prometheus.HistogramVec
+
 	// 添加cpu和memory的指标
 	PodCpuUsageSecondsTotal  *prometheus.GaugeVec
 	PodMemoryWorkingSetBytes *prometheus.GaugeVec
@@ -100,6 +102,12 @@ func BuildMetricsOptions() MetricOptions {
 		[]string{"function_name"},
 	)
 
+	gatewayFunctionRequestHistogram := prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "gateway_function_request_seconds",
+		Help:    "Function request time taken",
+		Buckets: []float64{.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15},
+	}, []string{"function_name"})
+
 	metricsOptions := MetricOptions{
 		GatewayFunctionsHistogram:        gatewayFunctionsHistogram,
 		GatewayFunctionInvocation:        gatewayFunctionInvocation,
@@ -107,8 +115,9 @@ func BuildMetricsOptions() MetricOptions {
 		GatewayFunctionInvocationStarted: gatewayFunctionInvocationStarted,
 
 		// 添加如下
-		PodCpuUsageSecondsTotal:  podCpuUsageSecondsTotal,
-		PodMemoryWorkingSetBytes: podMemoryWorkingSetBytes,
+		GatewayFunctionRequestHistogram: gatewayFunctionRequestHistogram,
+		PodCpuUsageSecondsTotal:         podCpuUsageSecondsTotal,
+		PodMemoryWorkingSetBytes:        podMemoryWorkingSetBytes,
 	}
 
 	return metricsOptions

@@ -9,8 +9,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strconv"
-
-	types "github.com/openfaas/faas-provider/types"
 )
 
 // AddMetricsHandler wraps a http.HandlerFunc with Prometheus metrics
@@ -38,7 +36,7 @@ func AddMetricsHandler(handler http.HandlerFunc, prometheusQuery PrometheusQuery
 			return
 		}
 
-		var functions []types.FunctionStatus
+		var functions []FunctionStatus
 
 		err := json.Unmarshal(upstreamBody, &functions)
 		if err != nil {
@@ -51,7 +49,8 @@ func AddMetricsHandler(handler http.HandlerFunc, prometheusQuery PrometheusQuery
 		// Ensure values are empty first.
 		for i := range functions {
 			functions[i].InvocationCount = 0
-			var usage = types.FunctionUsage{CPU: 0, TotalMemoryBytes: 0}
+			functions[i].InvocationAvgTime = 0
+			var usage = FunctionUsage{CPU: 0, TotalMemoryBytes: 0}
 			functions[i].Usage = &usage
 		}
 
@@ -88,6 +87,15 @@ func AddMetricsHandler(handler http.HandlerFunc, prometheusQuery PrometheusQuery
 				log.Printf("Error querying Prometheus: %s\n", err.Error())
 			}
 			mixMemory(&functions, results2)
+
+			//sum by (function_name) (gateway_function_cold_start_seconds_sum / gateway_function_cold_start_seconds_count)
+			q3 := fmt.Sprintf(`sum by (function_name) (gateway_function_request_seconds_sum / gateway_function_request_seconds_count)`)
+			results3, err3 := prometheusQuery.Fetch(url.QueryEscape(q3))
+			if err3 != nil {
+				// log the error but continue, the mixIn will correctly handle the empty results.
+				log.Printf("Error querying Prometheus: %s\n", err.Error())
+			}
+			mixTime(&functions, results3)
 		}
 
 		bytesOut, err := json.Marshal(functions)
@@ -103,7 +111,7 @@ func AddMetricsHandler(handler http.HandlerFunc, prometheusQuery PrometheusQuery
 	}
 }
 
-func mixIn(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) {
+func mixIn(functions *[]FunctionStatus, metrics *VectorQueryResponse) {
 
 	if functions == nil {
 		return
@@ -128,7 +136,7 @@ func mixIn(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) {
 	}
 }
 
-func mixCPU(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) {
+func mixCPU(functions *[]FunctionStatus, metrics *VectorQueryResponse) {
 
 	if functions == nil {
 		return
@@ -153,7 +161,7 @@ func mixCPU(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) {
 	}
 }
 
-func mixMemory(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) {
+func mixMemory(functions *[]FunctionStatus, metrics *VectorQueryResponse) {
 
 	if functions == nil {
 		return
@@ -176,5 +184,34 @@ func mixMemory(functions *[]types.FunctionStatus, metrics *VectorQueryResponse) 
 				}
 			}
 		}
+	}
+}
+
+func mixTime(functions *[]FunctionStatus, metrics *VectorQueryResponse) {
+
+	if functions == nil {
+		return
+	}
+
+	log.Printf("metrices len: %d", len(metrics.Data.Result))
+	for i, function := range *functions {
+		num := 0.0
+		for _, v := range metrics.Data.Result {
+			if v.Metric.Container == fmt.Sprintf("%s", function.Name) && v.Metric.Namespace == fmt.Sprintf("%s", function.Namespace) {
+				metricValue := v.Value[1]
+				switch value := metricValue.(type) {
+				case string:
+					f, err := strconv.ParseFloat(value, 64)
+					if err != nil {
+						log.Printf("add_metrics: unable to convert value %q for metric: %s", value, err)
+						continue
+					}
+					log.Printf("add_metrics: Memory %f", f)
+					(*functions)[i].InvocationAvgTime += f
+					num += 1.0
+				}
+			}
+		}
+		(*functions)[i].InvocationAvgTime /= num
 	}
 }
