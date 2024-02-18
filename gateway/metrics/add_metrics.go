@@ -66,6 +66,7 @@ func AddMetricsHandler(handler http.HandlerFunc, prometheusQuery PrometheusQuery
 				fun.Limits.Memory = function[i].Limits.Memory
 			}
 			fun.EnvProcess = function[i].EnvProcess
+			fun.EnvVars = function[i].EnvVars
 			fun.AvailableReplicas = function[i].AvailableReplicas
 			fun.Replicas = function[i].Replicas
 			var request = FunctionResources{CPU: "", Memory: ""}
@@ -73,6 +74,10 @@ func AddMetricsHandler(handler http.HandlerFunc, prometheusQuery PrometheusQuery
 			if function[i].Requests != nil {
 				fun.Requests.CPU = function[i].Requests.CPU
 				fun.Requests.Memory = function[i].Requests.Memory
+			}
+			fun.Secrets = function[i].Secrets
+			if function[i].Labels != nil {
+				fun.Labels = function[i].Labels
 			}
 			fun.Annotations = function[i].Annotations
 			fun.Constraints = function[i].Constraints
