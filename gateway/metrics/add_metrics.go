@@ -121,7 +121,7 @@ func AddMetricsHandler(handler http.HandlerFunc, prometheusQuery PrometheusQuery
 			mixMemory(&functions, results2)
 
 			//sum by (function_name) (gateway_function_cold_start_seconds_sum / gateway_function_cold_start_seconds_count)
-			q3 := fmt.Sprintf(`sum by (function_name) (gateway_function_request_seconds_sum[3m] / gateway_function_request_seconds_count[3m])`)
+			q3 := fmt.Sprintf(`sum by (function_name) (gateway_function_request_seconds_sum / gateway_function_request_seconds_count)`)
 			results3, err3 := prometheusQuery.Fetch(url.QueryEscape(q3))
 			if err3 != nil {
 				// log the error but continue, the mixIn will correctly handle the empty results.
