@@ -6,6 +6,7 @@ package metrics
 import (
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -19,8 +20,8 @@ type MetricOptions struct {
 
 	ServiceReplicasGauge *prometheus.GaugeVec
 
-	GatewayFunctionRequestHistogram *prometheus.HistogramVec
-
+	// GatewayFunctionRequestHistogram *prometheus.HistogramVec
+	GatewayFunctionRequestSummary *prometheus.SummaryVec
 	// 添加cpu和memory的指标
 	PodCpuUsageSecondsTotal  *prometheus.GaugeVec
 	PodMemoryWorkingSetBytes *prometheus.GaugeVec
@@ -102,10 +103,16 @@ func BuildMetricsOptions() MetricOptions {
 		[]string{"function_name"},
 	)
 
-	gatewayFunctionRequestHistogram := prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "gateway_function_request_seconds",
-		Help:    "Function request time taken",
-		Buckets: []float64{.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15},
+	//gatewayFunctionRequestHistogram := prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	//	Name:    "gateway_function_request_seconds",
+	//	Help:    "Function request time taken",
+	//	Buckets: []float64{.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15},
+	//}, []string{"function_name"})
+
+	gatewayFunctionRequestSummary := prometheus.NewSummaryVec(prometheus.SummaryOpts{
+		Name:   "gateway_function_request_seconds",
+		Help:   "Function request time taken",
+		MaxAge: 3 * time.Minute,
 	}, []string{"function_name"})
 
 	metricsOptions := MetricOptions{
@@ -115,9 +122,9 @@ func BuildMetricsOptions() MetricOptions {
 		GatewayFunctionInvocationStarted: gatewayFunctionInvocationStarted,
 
 		// 添加如下
-		GatewayFunctionRequestHistogram: gatewayFunctionRequestHistogram,
-		PodCpuUsageSecondsTotal:         podCpuUsageSecondsTotal,
-		PodMemoryWorkingSetBytes:        podMemoryWorkingSetBytes,
+		GatewayFunctionRequestSummary: gatewayFunctionRequestSummary,
+		PodCpuUsageSecondsTotal:       podCpuUsageSecondsTotal,
+		PodMemoryWorkingSetBytes:      podMemoryWorkingSetBytes,
 	}
 
 	return metricsOptions

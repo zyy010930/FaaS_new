@@ -56,7 +56,8 @@ func (p PrometheusFunctionNotifier) Notify(method string, URL string, originalUR
 			With(labels).
 			Inc()
 
-		p.Metrics.GatewayFunctionRequestHistogram.WithLabelValues(serviceName).Observe(seconds)
+		// p.Metrics.GatewayFunctionRequestHistogram.WithLabelValues(serviceName).Observe(seconds)
+		p.Metrics.GatewayFunctionRequestSummary.WithLabelValues(serviceName).Observe(seconds)
 	} else if event == "started" {
 		p.Metrics.GatewayFunctionInvocationStarted.WithLabelValues(serviceName).Inc()
 	}
