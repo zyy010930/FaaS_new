@@ -6,6 +6,7 @@ import (
 	"github.com/openfaas/faas-provider/types"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -240,8 +241,13 @@ func mixTime(functions *[]FunctionStatus, metrics *VectorQueryResponse) {
 						continue
 					}
 					log.Printf("add_metrics: avgTime %f", f)
-					(*functions)[i].InvocationAvgTime += f
-					num += 1.0
+					if f == math.NaN() {
+						(*functions)[i].InvocationAvgTime += 0
+						num += 1.0
+					} else {
+						(*functions)[i].InvocationAvgTime += f
+						num += 1.0
+					}
 				}
 			}
 		}
