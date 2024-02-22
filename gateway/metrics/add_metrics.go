@@ -241,7 +241,7 @@ func mixTime(functions *[]FunctionStatus, metrics *VectorQueryResponse) {
 						continue
 					}
 					log.Printf("add_metrics: avgTime %f", f)
-					if f == math.NaN() {
+					if math.IsNaN(f) {
 						(*functions)[i].InvocationAvgTime += 0
 						num += 1.0
 					} else {
