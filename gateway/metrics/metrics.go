@@ -110,9 +110,10 @@ func BuildMetricsOptions() MetricOptions {
 	//}, []string{"function_name"})
 
 	gatewayFunctionRequestSummary := prometheus.NewSummaryVec(prometheus.SummaryOpts{
-		Name:   "gateway_function_request_seconds",
-		Help:   "Function request time taken",
-		MaxAge: 3 * time.Minute,
+		Name:       "gateway_function_request_seconds",
+		Help:       "Function request time taken",
+		MaxAge:     3 * time.Minute,
+		Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.95: 0.005, 0.99: 0.001},
 	}, []string{"function_name"})
 
 	metricsOptions := MetricOptions{
