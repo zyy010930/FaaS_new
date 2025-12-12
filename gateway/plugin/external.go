@@ -70,7 +70,7 @@ func (s ExternalServiceQuery) GetReplicas(serviceName, serviceNamespace string) 
 		serviceName,
 		serviceNamespace,
 		s.IncludeUsage)
-
+	log.Printf(urlPath)
 	req, err := http.NewRequest(http.MethodGet, urlPath, nil)
 	if err != nil {
 		return emptyServiceQueryResponse, err
