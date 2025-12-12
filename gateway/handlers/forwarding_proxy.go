@@ -39,6 +39,7 @@ func MakeForwardingProxyHandler(proxy *types.HTTPClientReverseProxy,
 
 		start := time.Now()
 
+		log.Printf("fowarding_proxy: baseUrl = [%s], requestUrl = [%s]\n", baseURL, requestURL)
 		statusCode, err := forwardRequest(w, r, proxy.Client, baseURL, requestURL, proxy.Timeout, writeRequestURI, serviceAuthInjector)
 
 		seconds := time.Since(start)
